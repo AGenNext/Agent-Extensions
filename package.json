@@ -1,0 +1,16 @@
+{
+  "name": "agent-extensions",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "dev:github": "pnpm --filter @agennext/github-app dev",
+    "dev:docker": "pnpm --filter @agennext/docker-extension dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
