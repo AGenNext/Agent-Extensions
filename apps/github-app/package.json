@@ -8,7 +8,8 @@
     "dev": "node dist/index.js"
   },
   "dependencies": {
-    "@agennext/agent-core": "workspace:*"
+    "@agennext/agent-core": "workspace:*",
+    "@octokit/webhooks": "^13.5.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"
