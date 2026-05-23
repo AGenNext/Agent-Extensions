@@ -1,0 +1,308 @@
+id: agennext.ecosystem_compliance
+kind: schema_graph
+name: AGenNext Ecosystem Compliance Graph
+version: 0.1.0
+
+purpose: >
+  Defines the tools, skills, capabilities, policies, data contracts, and runtime surfaces
+  required for Agent Extensions to comply with the AGenNext ecosystem.
+
+required_domains:
+  - tool_catalog
+  - agent_runtime
+  - graph_schema
+  - backend_database
+  - policy_governance
+  - auditability
+  - github_extension
+  - docker_extension
+  - memory_context
+  - publishing
+
+skills:
+  - id: skill.command.parse
+    name: Slash Command Parsing
+    category: agent_runtime
+    required: true
+    description: Parse user commands such as /agent analyze, /agent review, and /agent fix-ci into typed command objects.
+    implemented_by:
+      - packages/agent-core/src/commands.ts
+
+  - id: skill.policy.evaluate
+    name: Policy Evaluation
+    category: policy_governance
+    required: true
+    description: Evaluate whether an action is allowed, blocked, or requires approval.
+    implemented_by:
+      - packages/agent-core/src/policy.ts
+
+  - id: skill.response.format
+    name: Response Formatting
+    category: agent_runtime
+    required: true
+    description: Format command outcomes into consistent GitHub/Docker/user-facing responses.
+    implemented_by:
+      - packages/agent-core/src/responses.ts
+
+  - id: skill.safe.execute
+    name: Safe Execution
+    category: agent_runtime
+    required: true
+    description: Execute actions through a resilient detect-diagnose-propose-execute-verify-report loop.
+    implemented_by:
+      - packages/agent-core/src/executor.ts
+      - packages/agent-core/src/result.ts
+
+  - id: skill.github.webhook.receive
+    name: GitHub Webhook Receiving
+    category: github_extension
+    required: true
+    description: Receive and verify GitHub webhook events.
+    implemented_by:
+      - apps/github-app/src/server.ts
+
+  - id: skill.github.comment.publish
+    name: GitHub Comment Publishing
+    category: github_extension
+    required: true
+    description: Publish issue and pull request comments back to GitHub.
+    implemented_by:
+      - packages/github-tools/src/comments.ts
+
+  - id: skill.github.pr.review
+    name: Pull Request Review
+    category: github_extension
+    required: true
+    description: Inspect pull request diffs and publish structured review output.
+    status: planned
+
+  - id: skill.github.ci.diagnose
+    name: CI Diagnostics
+    category: github_extension
+    required: true
+    description: Inspect workflow runs, failed jobs, job logs, and recommend or apply safe fixes.
+    status: planned
+
+  - id: skill.github.merge.conflict
+    name: Merge Conflict Assistance
+    category: github_extension
+    required: true
+    description: Detect merge conflicts, explain root causes, and propose safe resolutions without force-pushing.
+    status: planned
+
+  - id: skill.docker.inspect
+    name: Docker Runtime Inspection
+    category: docker_extension
+    required: true
+    description: Inspect containers, images, compose state, and logs.
+    implemented_by:
+      - apps/docker-extension/backend/server.js
+    status: stub
+
+  - id: skill.docker.fix
+    name: Docker Fix Suggestions
+    category: docker_extension
+    required: true
+    description: Diagnose Dockerfile and compose issues and propose safe fixes.
+    status: planned
+
+  - id: skill.backend.persist
+    name: Backend Persistence
+    category: backend_database
+    required: true
+    description: Persist installations, repositories, events, command runs, steps, policies, logs, graph nodes, graph edges, memories, and artifacts.
+    defined_by:
+      - schema/backend.graph.yaml
+    status: planned
+
+  - id: skill.graph.sync
+    name: Graph Synchronization
+    category: graph_schema
+    required: true
+    description: Sync schema graph files into backend graph tables and expose graph API.
+    defined_by:
+      - schema/backend.graph.yaml
+    status: planned
+
+  - id: skill.memory.store
+    name: Operational Memory
+    category: memory_context
+    required: true
+    description: Store repo context, failure patterns, resolution history, and user preferences.
+    defined_by:
+      - schema/backend.graph.yaml
+    status: planned
+
+  - id: skill.audit.log
+    name: Audit Logging
+    category: auditability
+    required: true
+    description: Record actions, decisions, policy blocks, approvals, and tool calls.
+    defined_by:
+      - schema/backend.graph.yaml
+    status: planned
+
+  - id: skill.publish.ghcr
+    name: GHCR Publishing
+    category: publishing
+    required: true
+    description: Build and publish Docker extension images to GitHub Container Registry.
+    implemented_by:
+      - .github/workflows/docker-extension.yml
+
+  - id: skill.docs.publish
+    name: Documentation Publishing
+    category: publishing
+    required: true
+    description: Publish docs through GitHub Pages.
+    implemented_by:
+      - .github/workflows/pages.yml
+
+tools:
+  - id: tool.github.api
+    name: GitHub API Tooling
+    required: true
+    capabilities:
+      - issues.comment.create
+      - pull_request.review.create
+      - pull_request.diff.read
+      - workflow.logs.read
+      - workflow.rerun
+      - repository.contents.read
+      - repository.contents.write
+
+  - id: tool.docker.api
+    name: Docker API Tooling
+    required: true
+    capabilities:
+      - containers.list
+      - containers.inspect
+      - logs.read
+      - compose.inspect
+      - images.inspect
+
+  - id: tool.backend.database
+    name: AGenNext Backend Database
+    required: true
+    capabilities:
+      - installations.persist
+      - events.persist
+      - commands.persist
+      - policies.persist
+      - graph.persist
+      - memories.persist
+      - audit.persist
+
+  - id: tool.graph.validator
+    name: Graph Validator
+    required: true
+    capabilities:
+      - schema.validate
+      - graph_nodes.validate
+      - graph_edges.validate
+      - policy_links.validate
+    status: planned
+
+  - id: tool.policy.engine
+    name: Policy Engine
+    required: true
+    capabilities:
+      - allow
+      - block
+      - require_approval
+      - record_decision
+
+  - id: tool.llm.provider
+    name: LLM Provider
+    required: true
+    capabilities:
+      - summarize
+      - plan
+      - classify_failure
+      - draft_patch
+      - explain_conflict
+    constraint: LLM must not directly execute shell or bypass policy.
+
+  - id: tool.artifact.registry
+    name: Artifact Registry
+    required: true
+    provider: ghcr
+    capabilities:
+      - image.publish
+      - image.pull
+      - image.version
+
+contracts:
+  - id: contract.command_run
+    required: true
+    fields:
+      - command_run_id
+      - event_id
+      - repository_id
+      - command_type
+      - actor
+      - status
+      - policy_decision
+      - started_at
+      - completed_at
+
+  - id: contract.command_result
+    required: true
+    fields:
+      - status
+      - title
+      - summary
+      - actionsTaken
+      - nextActions
+      - errors
+
+  - id: contract.policy_decision
+    required: true
+    fields:
+      - allowed
+      - requiresApproval
+      - reason
+
+policies:
+  - id: policy.no_direct_main_push
+    required: true
+  - id: policy.no_secret_exposure
+    required: true
+  - id: policy.require_approval_destructive
+    required: true
+  - id: policy.prefer_pull_requests
+    required: true
+  - id: policy.audit_every_action
+    required: true
+  - id: policy.llm_no_direct_execution
+    required: true
+
+compliance_levels:
+  - id: level.0.scaffolded
+    requirements:
+      - docs_exist
+      - graph_exists
+      - parser_exists
+
+  - id: level.1.operational
+    requirements:
+      - webhook_receives_commands
+      - comments_are_published
+      - policy_is_enforced
+      - command_runs_are_persisted
+
+  - id: level.2.autonomous_safe
+    requirements:
+      - ci_diagnostics_work
+      - pr_review_works
+      - merge_conflict_assist_works
+      - safe_fixes_open_prs
+      - audit_logs_complete
+
+  - id: level.3.ecosystem_native
+    requirements:
+      - backend_database_source_of_truth
+      - graph_sync_operational
+      - memory_store_operational
+      - marketplace_ready
+      - docker_extension_ready
