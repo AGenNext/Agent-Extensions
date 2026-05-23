@@ -30,6 +30,20 @@ nodes:
       - capability.agent.response_format
       - capability.agent.safe_execute
 
+  - id: runtime.puter
+    kind: preferred_runtime
+    name: Puter.js Runtime
+    owns:
+      - capability.runtime.graph_views
+      - capability.runtime.memory_views
+      - capability.runtime.approval_flows
+      - capability.runtime.command_orchestration
+
+  - id: runtime.node_bridge
+    kind: compatibility_bridge
+    name: Node Webhook Bridge
+    purpose: Preserved compatibility bridge for GitHub webhooks and Docker integration.
+
   - id: registry.ghcr
     kind: artifact_registry
     name: GitHub Container Registry
@@ -101,6 +115,14 @@ edges:
   - from: extension.docker
     relation: uses
     to: runtime.agent_core
+
+  - from: runtime.puter
+    relation: orchestrates
+    to: runtime.agent_core
+
+  - from: runtime.node_bridge
+    relation: bridges_to
+    to: runtime.puter
 
   - from: extension.docker
     relation: publishes_image_to
