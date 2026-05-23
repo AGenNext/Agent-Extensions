@@ -1,0 +1,127 @@
+id: agennext.agent_extensions
+kind: schema_graph
+name: Agent Extensions Graph
+version: 0.1.0
+
+nodes:
+  - id: extension.github
+    kind: extension
+    name: GitHub Extension
+    owns:
+      - capability.github.slash_commands
+      - capability.github.pr_review
+      - capability.github.ci_diagnostics
+      - capability.github.merge_conflict_assist
+
+  - id: extension.docker
+    kind: extension
+    name: Docker Extension
+    owns:
+      - capability.docker.container_analysis
+      - capability.docker.log_inspection
+      - capability.docker.compose_diagnostics
+
+  - id: runtime.agent_core
+    kind: runtime_package
+    name: Agent Core
+    owns:
+      - capability.agent.command_parse
+      - capability.agent.policy_evaluate
+      - capability.agent.response_format
+      - capability.agent.safe_execute
+
+  - id: registry.ghcr
+    kind: artifact_registry
+    name: GitHub Container Registry
+    provides:
+      - artifact.docker_extension_image
+
+  - id: docs.github_pages
+    kind: documentation_site
+    name: GitHub Pages
+    provides:
+      - docs.public_extension_docs
+
+capabilities:
+  - id: capability.github.slash_commands
+    kind: capability
+    commands:
+      - /agent analyze
+      - /agent review
+      - /agent fix-ci
+      - /agent merge-check
+      - /agent explain-conflict
+      - /agent resolve-conflict
+      - /agent implement
+
+  - id: capability.docker.container_analysis
+    kind: capability
+    commands:
+      - /agent docker analyze
+      - /agent docker logs
+
+  - id: capability.agent.safe_execute
+    kind: capability
+    behavior:
+      - detect
+      - diagnose
+      - propose
+      - execute_safely
+      - verify
+      - report
+
+policies:
+  - id: policy.no_direct_main_push
+    kind: safety_policy
+    rule: Never push directly to main.
+
+  - id: policy.no_secret_exposure
+    kind: safety_policy
+    rule: Never expose secrets in logs, comments, patches, or generated responses.
+
+  - id: policy.require_approval_destructive
+    kind: safety_policy
+    rule: Destructive actions require explicit human approval.
+
+  - id: policy.prefer_pull_requests
+    kind: safety_policy
+    rule: Generated code changes should happen through pull requests.
+
+artifacts:
+  - id: artifact.docker_extension_image
+    kind: container_image
+    registry: ghcr.io
+    image: ghcr.io/agennext/agent-docker-extension:latest
+
+edges:
+  - from: extension.github
+    relation: uses
+    to: runtime.agent_core
+
+  - from: extension.docker
+    relation: uses
+    to: runtime.agent_core
+
+  - from: extension.docker
+    relation: publishes_image_to
+    to: registry.ghcr
+
+  - from: extension.github
+    relation: documents_to
+    to: docs.github_pages
+
+  - from: runtime.agent_core
+    relation: enforces
+    to: policy.no_direct_main_push
+
+  - from: runtime.agent_core
+    relation: enforces
+    to: policy.no_secret_exposure
+
+  - from: runtime.agent_core
+    relation: enforces
+    to: policy.require_approval_destructive
+
+  - from: runtime.agent_core
+    relation: enforces
+    to: policy.prefer_pull_requests
