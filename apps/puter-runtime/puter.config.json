@@ -1,0 +1,30 @@
+{
+  "name": "AGenNext Agent Extensions",
+  "id": "agennext-agent-extensions",
+  "runtime": "puter.js",
+  "version": "0.1.0",
+  "description": "Puter.js-first orchestration surface for AGenNext GitHub and Docker Agent Extensions.",
+  "sourceOfTruth": {
+    "backend": "AGenNext backend/database",
+    "graph": "schema/*.graph.yaml"
+  },
+  "modules": {
+    "app": "src/app.js",
+    "commands": "src/commands.js",
+    "backend": "src/backend.js",
+    "graph": "src/graph.js",
+    "approvals": "src/approvals.js",
+    "bridgeContract": "src/bridge-contract.js"
+  },
+  "bridges": {
+    "github": "apps/github-app/src/server.ts",
+    "docker": "apps/docker-extension/backend/server.js"
+  },
+  "rules": [
+    "Do not delete preserved Node bridge code until replacement is operational.",
+    "No silent failures.",
+    "Policy gates all actions.",
+    "Backend/database is source of truth.",
+    "Schema graph is compliance truth."
+  ]
+}
