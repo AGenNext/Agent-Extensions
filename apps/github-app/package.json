@@ -1,0 +1,16 @@
+{
+  "name": "@agennext/github-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node dist/index.js"
+  },
+  "dependencies": {
+    "@agennext/agent-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
