@@ -1,0 +1,11 @@
+{
+  "name": "@agennext/puter-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Puter.js runtime scaffold ready'",
+    "build": "echo 'No build step required yet for Puter.js scaffold'",
+    "test": "node -e \"import('./src/app.js').then(m => console.log(m.getRuntimeStatus()))\""
+  }
+}
