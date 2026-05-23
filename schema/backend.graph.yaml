@@ -1,0 +1,230 @@
+id: agennext.agent_extensions.backend
+kind: schema_graph
+name: Agent Extensions Backend Graph
+version: 0.1.0
+
+principle:
+  source_of_truth: agennext_backend_database
+  description: From this point forward, Agent Extensions uses the AGenNext backend and database as the system of record for installations, events, command runs, policies, audit logs, graph state, and memory.
+
+nodes:
+  - id: backend.agennext
+    kind: backend_service
+    name: AGenNext Backend
+    owns:
+      - database.agennext
+      - api.extension_runtime
+      - service.command_orchestrator
+      - service.audit_logger
+      - service.graph_sync
+      - service.memory_store
+
+  - id: database.agennext
+    kind: database
+    name: AGenNext Database
+    stores:
+      - table.installations
+      - table.repositories
+      - table.extension_events
+      - table.command_runs
+      - table.command_steps
+      - table.policies
+      - table.audit_logs
+      - table.graph_nodes
+      - table.graph_edges
+      - table.memories
+      - table.artifacts
+
+  - id: api.extension_runtime
+    kind: api_surface
+    name: Extension Runtime API
+    endpoints:
+      - POST /webhooks/github
+      - POST /commands/run
+      - GET /commands/:id
+      - POST /events/ingest
+      - GET /graph
+      - POST /graph/sync
+
+  - id: service.command_orchestrator
+    kind: backend_service
+    name: Command Orchestrator
+    responsibilities:
+      - parse_command
+      - evaluate_policy
+      - plan_action
+      - execute_safe_steps
+      - verify_result
+      - report_status
+
+  - id: service.audit_logger
+    kind: backend_service
+    name: Audit Logger
+    responsibilities:
+      - record_events
+      - record_decisions
+      - record_tool_calls
+      - record_policy_blocks
+      - record_user_approvals
+
+  - id: service.graph_sync
+    kind: backend_service
+    name: Graph Sync
+    responsibilities:
+      - sync_schema_files
+      - persist_graph_nodes
+      - persist_graph_edges
+      - expose_graph_api
+
+  - id: service.memory_store
+    kind: backend_service
+    name: Memory Store
+    responsibilities:
+      - store_repo_context
+      - store_failure_patterns
+      - store_resolution_history
+      - store_user_preferences
+
+relationships:
+  - from: extension.github
+    relation: sends_events_to
+    to: backend.agennext
+
+  - from: extension.docker
+    relation: sends_events_to
+    to: backend.agennext
+
+  - from: backend.agennext
+    relation: persists_to
+    to: database.agennext
+
+  - from: service.command_orchestrator
+    relation: writes
+    to: table.command_runs
+
+  - from: service.audit_logger
+    relation: writes
+    to: table.audit_logs
+
+  - from: service.graph_sync
+    relation: writes
+    to: table.graph_nodes
+
+  - from: service.graph_sync
+    relation: writes
+    to: table.graph_edges
+
+tables:
+  - id: table.installations
+    columns:
+      - installation_id
+      - provider
+      - account_id
+      - account_login
+      - status
+      - created_at
+      - updated_at
+
+  - id: table.repositories
+    columns:
+      - repository_id
+      - installation_id
+      - full_name
+      - default_branch
+      - visibility
+      - agent_enabled
+      - created_at
+      - updated_at
+
+  - id: table.extension_events
+    columns:
+      - event_id
+      - provider
+      - event_type
+      - repository_id
+      - payload_hash
+      - received_at
+      - processed_at
+      - status
+
+  - id: table.command_runs
+    columns:
+      - command_run_id
+      - event_id
+      - repository_id
+      - command_type
+      - actor
+      - status
+      - policy_decision
+      - started_at
+      - completed_at
+
+  - id: table.command_steps
+    columns:
+      - command_step_id
+      - command_run_id
+      - step_type
+      - status
+      - input_hash
+      - output_hash
+      - error_summary
+      - started_at
+      - completed_at
+
+  - id: table.policies
+    columns:
+      - policy_id
+      - scope
+      - rule
+      - severity
+      - enabled
+      - created_at
+      - updated_at
+
+  - id: table.audit_logs
+    columns:
+      - audit_log_id
+      - actor
+      - action
+      - target
+      - decision
+      - metadata_hash
+      - created_at
+
+  - id: table.graph_nodes
+    columns:
+      - node_id
+      - kind
+      - name
+      - metadata
+      - created_at
+      - updated_at
+
+  - id: table.graph_edges
+    columns:
+      - edge_id
+      - from_node_id
+      - relation
+      - to_node_id
+      - metadata
+      - created_at
+      - updated_at
+
+  - id: table.memories
+    columns:
+      - memory_id
+      - repository_id
+      - memory_type
+      - content_hash
+      - summary
+      - created_at
+      - updated_at
+
+  - id: table.artifacts
+    columns:
+      - artifact_id
+      - repository_id
+      - artifact_type
+      - uri
+      - checksum
+      - created_at
