@@ -1,0 +1,53 @@
+id: agennext.backend_api
+kind: schema_graph
+name: Backend API Graph
+version: 0.1.0
+
+backend:
+  runtime: agennext_backend
+  source_of_truth: backend_database
+
+endpoints:
+  - id: endpoint.health
+    path: /health
+    method: GET
+    purpose: Runtime health status
+    expected_response:
+      - ok
+      - status
+      - runtime
+
+  - id: endpoint.commands.run
+    path: /commands/run
+    method: POST
+    purpose: Persist and orchestrate command runs
+    required_fields:
+      - command_run_id
+      - command_type
+      - actor
+      - status
+
+  - id: endpoint.graph.sync
+    path: /graph/sync
+    method: POST
+    purpose: Persist graph nodes and edges
+    required_fields:
+      - graph_id
+      - nodes
+      - edges
+
+  - id: endpoint.approvals.request
+    path: /approvals/request
+    method: POST
+    purpose: Request human approval for protected actions
+    required_fields:
+      - approval_id
+      - action
+      - risk_level
+
+runtime_rules:
+  - Backend should return structured partial responses when dependencies fail.
+  - Backend should never silently fail.
+  - Policy decisions must be persisted.
+  - Graph synchronization must be auditable.
+  - Approval flows must be policy-driven.
