@@ -6,6 +6,7 @@
  */
 
 import http from 'node:http';
+import { syncGraph } from './graph/sync-engine.js';
 import {
   validateApprovalRequest,
   validateCommandRun,
@@ -20,7 +21,6 @@ import {
   persistApprovalRequest,
   persistAuditLog,
   persistCommandRun,
-  persistGraphSync,
 } from './storage/memory-store.js';
 
 const port = Number(process.env.PORT || 3100);
@@ -142,10 +142,12 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    const persisted = persistGraphSync(payload);
+    const synced = await syncGraph(payload);
 
     audit('graph_sync.persisted', {
       graph_id: payload.graph_id,
+      synced_nodes: synced.synced_nodes,
+      synced_edges: synced.synced_edges,
     });
 
     send(response, 202, {
@@ -153,7 +155,7 @@ const server = http.createServer(async (request, response) => {
       type: 'graph_sync',
       validation,
       persisted: true,
-      data: persisted,
+      data: synced,
     });
     return;
   }
