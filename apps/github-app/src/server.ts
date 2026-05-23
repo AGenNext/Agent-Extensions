@@ -9,6 +9,7 @@
  *   webhook bridge or the backend owns webhook ingestion fully.
  */
 
+import crypto from 'node:crypto';
 import http from 'node:http';
 import { Webhooks } from '@octokit/webhooks';
 import {
@@ -18,6 +19,7 @@ import {
   safelyExecute,
 } from '@agennext/agent-core';
 import { publishComment } from '@agennext/github-tools';
+import { persistGithubCommandRun } from './backend-client.js';
 
 const port = Number(process.env.PORT ?? 3000);
 const secret = process.env.GITHUB_WEBHOOK_SECRET ?? 'development-secret';
@@ -37,6 +39,7 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
+  const actor = payload.comment.user.login;
 
   const result = await safelyExecute('github-command-loop', async () => {
     const command = parseAgentCommand(comment);
@@ -48,6 +51,20 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
 
     const response = formatCommandResponse(command, policy);
 
+    const commandRunId = crypto.randomUUID();
+
+    const backendResult = await persistGithubCommandRun({
+      commandRunId,
+      commandType: command.type,
+      actor,
+      status: policy.allowed ? 'accepted' : 'blocked',
+      repository: `${owner}/${repo}`,
+    });
+
+    if (!backendResult.ok) {
+      console.warn('Backend persistence unavailable', backendResult);
+    }
+
     if (!githubToken) {
       console.warn('Missing GITHUB_TOKEN. Falling back to log-only mode.');
 
@@ -55,7 +72,11 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
         status: 'partial',
         title: 'GitHub token missing',
         summary: response,
-        actionsTaken: ['Parsed command', 'Evaluated policy'],
+        actionsTaken: [
+          'Parsed command',
+          'Evaluated policy',
+          'Attempted backend persistence',
+        ],
         nextActions: ['Configure GITHUB_TOKEN'],
         errors: ['GitHub comment publishing disabled'],
       };
@@ -73,9 +94,12 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
       status: 'success',
       title: 'GitHub command processed',
       summary: response,
-      actionsTaken: ['Published GitHub comment'],
+      actionsTaken: [
+        'Persisted command run to backend',
+        'Published GitHub comment',
+      ],
       nextActions: [],
-      errors: [],
+      errors: backendResult.ok ? [] : ['Backend persistence unavailable'],
     };
   });
 
