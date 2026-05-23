@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "node dist/index.js"
+    "dev": "node dist/server.js"
   },
   "dependencies": {
     "@agennext/agent-core": "workspace:*",
+    "@agennext/github-tools": "workspace:*",
     "@octokit/webhooks": "^13.5.0"
   },
   "devDependencies": {
