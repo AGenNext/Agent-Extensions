@@ -1,0 +1,50 @@
+id: agennext.puter_views
+kind: schema_graph
+name: Puter Runtime Views Graph
+version: 0.1.0
+
+views:
+  - id: view.dashboard
+    runtime: puter.js
+    title: Agent Extensions Dashboard
+    data_sources:
+      - backend.health
+      - commands.recent
+      - graph.summary
+
+  - id: view.commands
+    runtime: puter.js
+    title: Command Runs
+    data_sources:
+      - commands.runs
+      - commands.steps
+      - audit.logs
+
+  - id: view.graph
+    runtime: puter.js
+    title: Schema Graph
+    data_sources:
+      - graph.nodes
+      - graph.edges
+      - compliance.report
+
+  - id: view.approvals
+    runtime: puter.js
+    title: Human Approvals
+    data_sources:
+      - approvals.pending
+      - approvals.history
+
+  - id: view.integrations
+    runtime: puter.js
+    title: Integration Bridges
+    data_sources:
+      - github.status
+      - docker.status
+      - bridge.events
+
+rules:
+  - Views must tolerate partial backend availability.
+  - Views should report partial status instead of hard failure.
+  - Compliance state should be graph-driven.
+  - Approval state should be policy-driven.
