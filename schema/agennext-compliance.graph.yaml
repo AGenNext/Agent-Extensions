@@ -18,6 +18,7 @@ required_domains:
   - docker_extension
   - memory_context
   - publishing
+  - puter_runtime
 
 skills:
   - id: skill.command.parse
@@ -53,6 +54,17 @@ skills:
       - packages/agent-core/src/executor.ts
       - packages/agent-core/src/result.ts
 
+  - id: skill.puter.runtime
+    name: Puter Runtime Orchestration
+    category: puter_runtime
+    required: true
+    description: Preferred runtime and userland surface for orchestration, graph views, memory views, and approval flows.
+    implemented_by:
+      - apps/puter-runtime/src/app.js
+      - apps/puter-runtime/src/commands.js
+      - apps/puter-runtime/src/graph.js
+      - apps/puter-runtime/src/approvals.js
+
   - id: skill.github.webhook.receive
     name: GitHub Webhook Receiving
     category: github_extension
@@ -60,6 +72,7 @@ skills:
     description: Receive and verify GitHub webhook events.
     implemented_by:
       - apps/github-app/src/server.ts
+    note: Preserved as thin compatibility bridge.
 
   - id: skill.github.comment.publish
     name: GitHub Comment Publishing
@@ -304,5 +317,6 @@ compliance_levels:
       - backend_database_source_of_truth
       - graph_sync_operational
       - memory_store_operational
+      - puter_runtime_operational
       - marketplace_ready
       - docker_extension_ready
