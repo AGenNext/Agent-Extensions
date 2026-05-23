@@ -1,0 +1,78 @@
+id: agennext.puter_runtime
+kind: schema_graph
+name: Puter Runtime Graph
+version: 0.1.0
+
+runtime:
+  id: runtime.puter
+  type: preferred_runtime
+  runtime_engine: puter.js
+  status: scaffolded
+
+source_of_truth:
+  backend: agennext_backend_database
+  graph: schema_graphs
+
+modules:
+  - id: module.app
+    path: apps/puter-runtime/src/app.js
+    responsibilities:
+      - runtime_bootstrap
+      - runtime_status
+
+  - id: module.commands
+    path: apps/puter-runtime/src/commands.js
+    responsibilities:
+      - command_orchestration
+      - command_dispatch
+      - policy_flow
+
+  - id: module.backend
+    path: apps/puter-runtime/src/backend.js
+    responsibilities:
+      - backend_connection
+      - backend_sync
+      - command_persistence
+
+  - id: module.graph
+    path: apps/puter-runtime/src/graph.js
+    responsibilities:
+      - graph_loading
+      - graph_views
+      - compliance_views
+
+  - id: module.approvals
+    path: apps/puter-runtime/src/approvals.js
+    responsibilities:
+      - approval_requests
+      - approval_status
+      - risk_gating
+
+  - id: module.bridge_contract
+    path: apps/puter-runtime/src/bridge-contract.js
+    responsibilities:
+      - backend_contracts
+      - graph_sync_contracts
+      - approval_contracts
+
+bridges:
+  - id: bridge.github
+    type: compatibility_bridge
+    path: apps/github-app/src/server.ts
+    preserved: true
+    delete_policy: comment_and_preserve
+
+  - id: bridge.docker
+    type: compatibility_bridge
+    path: apps/docker-extension/backend/server.js
+    preserved: true
+    delete_policy: comment_and_preserve
+
+runtime_rules:
+  - No silent failures
+  - Prefer partial success over hard failure
+  - Policy gates all actions
+  - Backend/database is source of truth
+  - Schema graph is capability and compliance truth
+  - Generated fixes go through PRs
+  - Preserve compatibility bridges during migration
