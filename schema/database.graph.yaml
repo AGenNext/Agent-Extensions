@@ -1,0 +1,39 @@
+id: agennext.database_adapter
+kind: schema_graph
+name: Database Adapter Graph
+version: 0.1.0
+
+adapter:
+  id: adapter.database
+  type: persistence_adapter
+  runtime_status: planned
+
+source_of_truth:
+  backend_database: agennext_database
+  schema_graphs: required
+
+required_methods:
+  - persistInstallation
+  - persistRepository
+  - persistEvent
+  - persistCommandRun
+  - persistCommandStep
+  - persistPolicyDecision
+  - persistAuditLog
+  - persistGraphNode
+  - persistGraphEdge
+  - persistMemory
+  - persistArtifact
+
+runtime_rules:
+  - No silent failures
+  - Return structured partial responses on dependency failures
+  - Audit every persisted decision
+  - Keep graph schema and persistence model aligned
+  - Persist graph sync operations
+
+future_targets:
+  - PostgreSQL
+  - SQLite
+  - Edge database adapters
+  - Distributed graph persistence
