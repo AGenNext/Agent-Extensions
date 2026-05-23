@@ -1,9 +1,16 @@
 import http from 'node:http';
 import { Webhooks } from '@octokit/webhooks';
-import { evaluatePolicy, parseAgentCommand } from '@agennext/agent-core';
+import {
+  evaluatePolicy,
+  formatCommandResponse,
+  parseAgentCommand,
+  safelyExecute,
+} from '@agennext/agent-core';
+import { publishComment } from '@agennext/github-tools';
 
 const port = Number(process.env.PORT ?? 3000);
 const secret = process.env.GITHUB_WEBHOOK_SECRET ?? 'development-secret';
+const githubToken = process.env.GITHUB_TOKEN ?? '';
 
 const webhooks = new Webhooks({
   secret,
@@ -16,16 +23,52 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
     return;
   }
 
-  const command = parseAgentCommand(comment);
+  const owner = payload.repository.owner.login;
+  const repo = payload.repository.name;
+  const issueNumber = payload.issue.number;
 
-  const policy = evaluatePolicy({
-    commandType: command.type,
-    destructive: command.type === 'resolve-conflict',
+  const result = await safelyExecute('github-command-loop', async () => {
+    const command = parseAgentCommand(comment);
+
+    const policy = evaluatePolicy({
+      commandType: command.type,
+      destructive: command.type === 'resolve-conflict',
+    });
+
+    const response = formatCommandResponse(command, policy);
+
+    if (!githubToken) {
+      console.warn('Missing GITHUB_TOKEN. Falling back to log-only mode.');
+
+      return {
+        status: 'partial',
+        title: 'GitHub token missing',
+        summary: response,
+        actionsTaken: ['Parsed command', 'Evaluated policy'],
+        nextActions: ['Configure GITHUB_TOKEN'],
+        errors: ['GitHub comment publishing disabled'],
+      };
+    }
+
+    await publishComment({
+      token: githubToken,
+      owner,
+      repo,
+      issueNumber,
+      body: response,
+    });
+
+    return {
+      status: 'success',
+      title: 'GitHub command processed',
+      summary: response,
+      actionsTaken: ['Published GitHub comment'],
+      nextActions: [],
+      errors: [],
+    };
   });
 
-  console.log('Slash command received');
-  console.log(JSON.stringify(command, null, 2));
-  console.log(JSON.stringify(policy, null, 2));
+  console.log(JSON.stringify(result, null, 2));
 });
 
 const server = http.createServer(async (request, response) => {
