@@ -6,19 +6,19 @@
  */
 
 import http from 'node:http';
-import { syncGraph } from './graph/sync-engine.js';
+import { requestApproval } from './approvals/approval-engine.js';
 import {
   validateApprovalRequest,
   validateCommandRun,
   validateGraphSync,
 } from './contracts/validator.js';
+import { syncGraph } from './graph/sync-engine.js';
 import {
   getRuntimeState,
   listApprovals,
   listAuditLogs,
   listCommandRuns,
   listGraphSyncs,
-  persistApprovalRequest,
   persistAuditLog,
   persistCommandRun,
 } from './storage/memory-store.js';
@@ -173,10 +173,11 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    const persisted = persistApprovalRequest(payload);
+    const approval = await requestApproval(payload);
 
     audit('approval_request.persisted', {
-      approval_id: payload.approval_id,
+      approval_id: approval.approval_id,
+      risk_level: approval.risk_level,
     });
 
     send(response, 202, {
@@ -184,7 +185,7 @@ const server = http.createServer(async (request, response) => {
       type: 'approval_request',
       validation,
       persisted: true,
-      data: persisted,
+      data: approval,
     });
     return;
   }
