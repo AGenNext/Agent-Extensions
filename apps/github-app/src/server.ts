@@ -1,3 +1,14 @@
+/*
+ * Node bridge preserved intentionally.
+ *
+ * Direction update:
+ * - Puter.js is the preferred runtime and userland surface going forward.
+ * - This Node server remains as a thin GitHub webhook bridge where a server-side
+ *   receiver is required by GitHub App webhooks.
+ * - Do not delete this file until the Puter.js runtime has an equivalent secure
+ *   webhook bridge or the backend owns webhook ingestion fully.
+ */
+
 import http from 'node:http';
 import { Webhooks } from '@octokit/webhooks';
 import {
