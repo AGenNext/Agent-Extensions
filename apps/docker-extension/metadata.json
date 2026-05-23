@@ -1,0 +1,12 @@
+{
+  "icon": "docker.svg",
+  "ui": {
+    "dashboard-tab": {
+      "title": "Agent",
+      "root": "/ui"
+    }
+  },
+  "vm": {
+    "image": "ghcr.io/agennext/agent-docker-extension:latest"
+  }
+}
