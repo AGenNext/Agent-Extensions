@@ -11,6 +11,17 @@ import {
   validateCommandRun,
   validateGraphSync,
 } from './contracts/validator.js';
+import {
+  getRuntimeState,
+  listApprovals,
+  listAuditLogs,
+  listCommandRuns,
+  listGraphSyncs,
+  persistApprovalRequest,
+  persistAuditLog,
+  persistCommandRun,
+  persistGraphSync,
+} from './storage/memory-store.js';
 
 const port = Number(process.env.PORT || 3100);
 
@@ -37,6 +48,13 @@ function send(response, status, body) {
   response.end(JSON.stringify(body, null, 2));
 }
 
+function audit(action, metadata = {}) {
+  persistAuditLog({
+    action,
+    metadata,
+  });
+}
+
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host}`);
 
@@ -45,6 +63,39 @@ const server = http.createServer(async (request, response) => {
       ok: true,
       runtime: 'agennext-backend',
       status: 'scaffolded',
+      state: getRuntimeState(),
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/commands') {
+    send(response, 200, {
+      ok: true,
+      data: listCommandRuns(),
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/graph/syncs') {
+    send(response, 200, {
+      ok: true,
+      data: listGraphSyncs(),
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/approvals') {
+    send(response, 200, {
+      ok: true,
+      data: listApprovals(),
+    });
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/audit/logs') {
+    send(response, 200, {
+      ok: true,
+      data: listAuditLogs(),
     });
     return;
   }
@@ -53,12 +104,27 @@ const server = http.createServer(async (request, response) => {
     const payload = await readJson(request);
     const validation = validateCommandRun(payload);
 
-    send(response, validation.valid ? 202 : 400, {
-      ok: validation.valid,
+    if (!validation.valid) {
+      send(response, 400, {
+        ok: false,
+        type: 'command_run',
+        validation,
+      });
+      return;
+    }
+
+    const persisted = persistCommandRun(payload);
+
+    audit('command_run.persisted', {
+      command_run_id: payload.command_run_id,
+    });
+
+    send(response, 202, {
+      ok: true,
       type: 'command_run',
       validation,
-      persisted: false,
-      note: 'Persistence adapter not connected yet.',
+      persisted: true,
+      data: persisted,
     });
     return;
   }
@@ -67,12 +133,27 @@ const server = http.createServer(async (request, response) => {
     const payload = await readJson(request);
     const validation = validateGraphSync(payload);
 
-    send(response, validation.valid ? 202 : 400, {
-      ok: validation.valid,
+    if (!validation.valid) {
+      send(response, 400, {
+        ok: false,
+        type: 'graph_sync',
+        validation,
+      });
+      return;
+    }
+
+    const persisted = persistGraphSync(payload);
+
+    audit('graph_sync.persisted', {
+      graph_id: payload.graph_id,
+    });
+
+    send(response, 202, {
+      ok: true,
       type: 'graph_sync',
       validation,
-      persisted: false,
-      note: 'Graph persistence adapter not connected yet.',
+      persisted: true,
+      data: persisted,
     });
     return;
   }
@@ -81,12 +162,27 @@ const server = http.createServer(async (request, response) => {
     const payload = await readJson(request);
     const validation = validateApprovalRequest(payload);
 
-    send(response, validation.valid ? 202 : 400, {
-      ok: validation.valid,
+    if (!validation.valid) {
+      send(response, 400, {
+        ok: false,
+        type: 'approval_request',
+        validation,
+      });
+      return;
+    }
+
+    const persisted = persistApprovalRequest(payload);
+
+    audit('approval_request.persisted', {
+      approval_id: payload.approval_id,
+    });
+
+    send(response, 202, {
+      ok: true,
       type: 'approval_request',
       validation,
-      persisted: false,
-      note: 'Approval persistence adapter not connected yet.',
+      persisted: true,
+      data: persisted,
     });
     return;
   }
