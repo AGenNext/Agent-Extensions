@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    ports:
+      - '3100:3100'
+    environment:
+      PORT: 3100
+
+  github-app:
+    build:
+      context: .
+      dockerfile: apps/github-app/Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      AGENT_BACKEND_URL: http://backend:3100
+      GITHUB_WEBHOOK_SECRET: change-me
+      GITHUB_TOKEN: change-me
+    depends_on:
+      - backend
